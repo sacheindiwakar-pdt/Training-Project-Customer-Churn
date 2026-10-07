@@ -1,0 +1,105 @@
+Query 1: Churn Rate by Contract Type
+Business Question
+
+Which contract type has the highest customer churn rate?
+
+SQL
+SELECT
+    dc.contract_name,
+    AVG(f.churn) AS churn_rate
+FROM fact_customer_account f
+JOIN dim_contract dc
+    ON f.contract_key = dc.contract_key
+GROUP BY dc.contract_name
+ORDER BY churn_rate DESC;
+
+Interpretation:
+Customers on Month-to-month contracts typically have the highest churn rate, indicating that longer-term contracts improve customer retention.
+
+Query 2: Churn Rate by Payment Method
+Business Question
+
+Which payment method is associated with the highest customer churn?
+
+SQL
+SELECT
+    dp.payment_method,
+    AVG(f.churn) AS churn_rate
+FROM fact_customer_account f
+JOIN dim_payment dp
+    ON f.payment_key = dp.payment_key
+GROUP BY dp.payment_method
+ORDER BY churn_rate DESC;
+
+Interpretation:
+Customers using Electronic Check generally show a higher churn rate compared to customers using automatic payment methods.
+
+Query 3: Average Monthly Charges by Churn Status
+Business Question
+
+Do customers who churn pay higher monthly charges than customers who stay?
+
+SQL
+SELECT
+    churn,
+    AVG(monthly_charges) AS avg_monthly_charges
+FROM fact_customer_account
+GROUP BY churn;
+
+Interpretation:
+If churned customers have a higher average monthly charge, pricing may be a contributing factor to customer attrition.
+
+Query 4: Top Risky Customer Segment
+Business Question
+
+How many customers belong to the highest-risk segment: Month-to-month contract, tenure less than 12 months, and monthly charges above average?
+
+SQL (Count)
+SELECT
+    COUNT(*) AS risky_customer_count
+FROM fact_customer_account f
+JOIN dim_contract dc
+    ON f.contract_key = dc.contract_key
+WHERE dc.contract_name = 'Month-to-month'
+  AND f.tenure < 12
+  AND f.monthly_charges >
+      (
+          SELECT AVG(monthly_charges)
+          FROM fact_customer_account
+      );
+
+SQL (List Customers)
+SELECT
+    f.customer_id,
+    f.tenure,
+    f.monthly_charges,
+    dc.contract_name
+FROM fact_customer_account f
+JOIN dim_contract dc
+    ON f.contract_key = dc.contract_key
+WHERE dc.contract_name = 'Month-to-month'
+  AND f.tenure < 12
+  AND f.monthly_charges >
+      (
+          SELECT AVG(monthly_charges)
+          FROM fact_customer_account
+      );
+
+Interpretation:
+These customers represent the most vulnerable segment and should be prioritized for retention programs.
+
+Query 5: High-Value Churned Customers
+Business Question
+
+How many high-value customers have churned, and what was their average tenure before leaving?
+
+SQL
+SELECT
+    COUNT(*) AS customer_count,
+    AVG(tenure) AS avg_tenure
+FROM fact_customer_account
+WHERE churn = 1
+  AND total_charges > 2000;
+
+Interpretation:
+This identifies customers who contributed significant revenue before churning, helping the business focus on retaining valuable customers.
